@@ -12,64 +12,7 @@ from scipy.ndimage.interpolation import rotate
 import tensorflow as tf
 from tensorflow.contrib.slim.nets import inception as inception
 
-
-@tf.RegisterGradient("Custom1")
-def redirected_relu_grad(op, grad):
-  assert op.type == "Relu"
-  x = op.inputs[0]
-
-  # Compute ReLu gradient
-  relu_grad = tf.where(x < 0., tf.zeros_like(grad), grad)
-
-  # Compute redirected gradient: where do we need to zero out incoming gradient
-  # to prevent input going lower if its already negative
-  neg_pushing_lower = tf.logical_and(x < 0., grad > 0.)
-  redirected_grad = tf.where(neg_pushing_lower, tf.zeros_like(grad), grad)
-
-  # Ensure we have at least a rank 2 tensor, as we expect a batch dimension
-  assert_op = tf.Assert(tf.greater(tf.rank(relu_grad), 1), [tf.rank(relu_grad)])
-  with tf.control_dependencies([assert_op]):
-    # only use redirected gradient where nothing got through original gradient
-    batch = tf.shape(relu_grad)[0]
-    reshaped_relu_grad = tf.reshape(relu_grad, [batch, -1])
-    relu_grad_mag = tf.norm(reshaped_relu_grad, axis=1)
-  result_grad = tf.where(relu_grad_mag > 0., relu_grad, redirected_grad)
-
-  global_step_t =tf.train.get_or_create_global_step()
-  return_relu_grad = tf.greater(global_step_t, tf.constant(16, tf.int64))
-
-  return tf.where(return_relu_grad, relu_grad, result_grad)
-
-@tf.RegisterGradient("Custom2")
-def redirected_relu6_grad(op, grad):
-  assert op.type == "Relu6"
-  x = op.inputs[0]
-
-  # Compute ReLu gradient
-  relu6_cond = tf.logical_or(x < 0., x > 6.)
-  relu_grad = tf.where(relu6_cond, tf.zeros_like(grad), grad)
-
-  # Compute redirected gradient: where do we need to zero out incoming gradient
-  # to prevent input going lower if its already negative, or going higher if
-  # already bigger than 6?
-  neg_pushing_lower = tf.logical_and(x < 0., grad > 0.)
-  pos_pushing_higher = tf.logical_and(x > 6., grad < 0.)
-  dir_filter = tf.logical_or(neg_pushing_lower, pos_pushing_higher)
-  redirected_grad = tf.where(dir_filter, tf.zeros_like(grad), grad)
-
-  # Ensure we have at least a rank 2 tensor, as we expect a batch dimension
-  assert_op = tf.Assert(tf.greater(tf.rank(relu_grad), 1), [tf.rank(relu_grad)])
-  with tf.control_dependencies([assert_op]):
-    # only use redirected gradient where nothing got through original gradient
-    batch = tf.shape(relu_grad)[0]
-    reshaped_relu_grad = tf.reshape(relu_grad, [batch, -1])
-    relu_grad_mag = tf.norm(reshaped_relu_grad, axis=1)
-  result_grad =  tf.where(relu_grad_mag > 0., relu_grad, redirected_grad)
-
-  global_step_t = tf.train.get_or_create_global_step()
-  return_relu_grad = tf.greater(global_step_t, tf.constant(16, tf.int64))
-
-  return tf.where(return_relu_grad, relu_grad, result_grad)
+import lucid_ops
 
 
 
@@ -97,6 +40,8 @@ def display_image(gen_pixels, save=True, name=0):
     pix = Image.fromarray(np.clip(gen_pixels[0],0,255).astype('uint8'))
     pix.show()
     if save:
+        if not os.path.isdir('./trial_runs/'):
+            os.makedirs('./trial_runs/')
         pix.save("./trial_runs/"+str(name)+".jpg")
 
 
@@ -328,29 +273,8 @@ def main(model,
         # Prepare graph
         #var_input = tf.Variable(tf.random_uniform([1,content_image.shape[1],content_image.shape[2],3], minval=-1, maxval=1), name="CombinedImage", dtype=tf.float32)
         var_input = tf.placeholder(shape = (None, content_image.shape[1], content_image.shape[2], 3), dtype=tf.float32, name='var_input')
-        ccss = np.array([[0.26, 0.09, 0.02],
-                        [0.27, 0.00, -0.05],
-                        [0.27, -0.09, 0.03]]).astype("float32")
-        mnss = np.max(np.linalg.norm(ccss, axis=0))
-        print("MNSS: ", mnss)
-        corr_matrix = (ccss / mnss).T
-        
-        def rfft2d_freqs(h,w):
-            fy = np.fft.fftfreq(h)[:,None]
-            if w % 2 == 1:
-                fx = np.fft.fftfreq(w)[: w // 2 + 2]
-            else:
-                fx = np.fft.fftfreq(w)[: w // 2 + 1]
-            return np.sqrt(fx * fx + fy * fy)
-        
-        sd = 0.01
         batch, h, w, ch = content_image.shape
-        freqs = rfft2d_freqs(h, w)
-        init_val_size = (2, ch) + freqs.shape
-        init_val = np.random.normal(size=init_val_size, scale=sd).astype(np.float32)
-        scale = 1.0 / np.maximum(freqs, 1.0 / max(w, h))
-        scale *= np.sqrt(w*h)
-        
+        init_val, scale, corr_matrix = lucid_ops.get_fourier_features(content_image)
 
         #corr_matrix = ccss
         decorrelate_matrix = tf.constant(corr_matrix, shape=[3,3])
@@ -474,7 +398,28 @@ def main(model,
             tf.global_variables_initializer().run()
             #saver.restore(sess, './input/inception_v3.ckpt')
             #saver.restore(sess, './input/vgg_19.ckpt')
-            saver.restore(sess, './input/inception_v1.ckpt')
+            try:
+                saver.restore(sess, './input/inception_v1.ckpt')
+            except:
+                ans = input("Model not found. Would you like to download it?: [y/n]")
+                if ans in ['Y', 'y', 'Yes', 'YES', 'yes']:
+                    if not os.path.isdir('./input'):
+                        os.makedirs('./input')
+                    import urllib.request
+                    import shutil
+                    url = "http://download.tensorflow.org/models/inception_v1_2016_08_28.tar.gz"
+                    file_name = './input/inception_v1_2016_08_28.tar.gz'
+                    print("Downloading model")
+                    with urllib.request.urlopen(url) as response, open(file_name, 'wb') as out_file:
+                        shutil.copyfileobj(response, out_file)
+                    print("Extracting tar.gz")
+                    import tarfile
+                    tar = tarfile.open(file_name, 'r:gz')
+                    tar.extractall(path='./input/')
+                    tar.close()
+                    os.remove(file_name)
+                    
+                    saver.restore(sess, './input/inception_v1.ckpt')
 
             #op_list = sess.graph.get_operations()
             #for op in op_list:
