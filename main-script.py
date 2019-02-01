@@ -18,13 +18,23 @@ model = 'Inception_V1'
 
 content_weights = {}
 style_weights = {}
+hours = 7.0
+minutes = 6.0
+training_time = 60*(60*hours + minutes)
+display_image_freq=100
+jitter_freq = 3
+cycles=1000
+stop_jittering= 1.
+max_image_dim = 512   
 
 
 if model == 'Inception_V1':
-    use_wass = True
+    use_wass = False
     if use_wass:
         alpha = 300
         beta = 1
+        display_image_freq = 10
+        cycles = 200
     else:
         alpha = 1 #Content Weight
         beta = 2.5    #Style Weight
@@ -39,14 +49,6 @@ if model == 'Inception_V1':
     
 
 
-hours = 7.0
-minutes = 6.0
-training_time = 60*(60*hours + minutes)
-display_image_freq=100
-jitter_freq = 3
-cycles=1000
-stop_jittering= 1.
-max_image_dim = 512   
 
 #content_weights["InceptionV3/InceptionV3/Conv2d_2a_3x3/Conv2D:0"] = 1
 #content_weights["InceptionV3/InceptionV3/Mixed_5c/concat:0"] = 1
