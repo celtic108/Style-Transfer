@@ -26,7 +26,7 @@ def display_image(gen_pixels, save=True, name=0):
     else:
         height = gen_pixels.shape[0]
         width = gen_pixels.shape[1]
-    print(gen_pixels.shape)
+    print("Image shape: ", gen_pixels.shape)
     pix = Image.fromarray(np.clip(gen_pixels[0],0,255).astype('uint8'))
     pix.show()
     if save:
@@ -38,8 +38,7 @@ def display_image(gen_pixels, save=True, name=0):
 def load_images(input_dir, max_image_dim = float('inf'), target_shape = None):
     for root, dirs, files in walk(input_dir):
         for file in files:
-            for _ in range(43):
-            #try:
+            try:
                 image = Image.open(osjoin(root, file)).convert("RGB")
                 w, h = image.size
                 if w > h:
@@ -53,17 +52,15 @@ def load_images(input_dir, max_image_dim = float('inf'), target_shape = None):
                     elif w > max_image_dim:
                         image = image.resize((w, max_image_dim), resample = Image.LANCZOS)
                 if target_shape is not None:
-                    print("Are we trying this?")
                     w_diff = max(0, w-target_shape[1])
                     h_diff = max(0, h-target_shape[2])
                     image = image.resize((max(target_shape[1], w), max(target_shape[2], h)), resample = Image.LANCZOS)
                     offset_x = randint(0,w_diff)
                     offset_y = randint(0,h_diff)
-                    print("New Size: ", offset_x, offset_y, target_shape[1]+ offset_x, target_shape[2]+offset_y)
                     image = image.crop((offset_x, offset_y, target_shape[1] + offset_x, target_shape[2] + offset_y))
                 return np.expand_dims(np.array(image), axis=0)
-            #except:
-            #    print("Found file that was not an image. Keep looking.")
+            except:
+                print("Found file that was not an image. Keep looking.")
 
 def preprocess(image):
     #image = ((image/255.)-0.5)*2

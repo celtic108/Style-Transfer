@@ -42,6 +42,7 @@ def main(model,
          alpha, beta, 
          cycles=float("inf"), 
          training_time=float("inf"), 
+         start_jittering = 0.,
          stop_jittering=float("inf"), 
          jitter_freq=50, 
          display_image_freq=300, 
@@ -73,18 +74,24 @@ def main(model,
         return False
     jitter_stop_cycle = float("inf")
     jitter_stop_time = float("inf")
-    if (cycles < float("inf") and stop_jittering < float("inf")):
-        jitter_stop_cycle = stop_jittering * cycles
-    if (training_time < float("inf") and stop_jittering < float("inf")):
-        jitter_stop_time = stop_jittering * training_time
-		
+    jitter_start_cycle = 0
+    jitter_start_time = 0
+    if cycles < float("inf"):
+        jitter_start_cycle = start_jittering * cycles
+        if stop_jittering < float("inf"):
+            jitter_stop_cycle = stop_jittering * cycles
+    if training_time < float("inf"):
+        jitter_start_time = start_jittering * training_time
+        if stop_jittering < float("inf"):
+            jitter_stop_time = stop_jittering * training_time
+
     slim = tf.contrib.slim
     
     content_image = load_images("./contentpicture", max_image_dim)
-    print("Content IMage: ", content_image.shape)
+    print("Content Image: ", content_image.shape)
         
     style_image = load_images("./stylepicture", target_shape = content_image.shape)
-    print("Style IMage: ", style_image.shape)
+    print("Style Image: ", style_image.shape)
 
     g=tf.Graph()
     with g.as_default():
@@ -109,10 +116,9 @@ def main(model,
         rgb_space = tf.expand_dims(tf.transpose(tf.spectral.irfft2d(four_to_complex), perm = [1,2,0]), axis=0)
         rgb_space = rgb_space[:,:h,:w,:ch] / 4.0
         recorr_img = tf.reshape(tf.matmul(tf.reshape(rgb_space, [-1,3]), decorrelate_matrix), [1,content_image.shape[1],content_image.shape[2],3])
-        if model == 'Inception_V1':
-            input_img = tf.nn.sigmoid(recorr_img)
-        else:
-            input_img = 255.*recorr_img + VGG_MEANS
+        #sigmoid_img = tf.nn.sigmoid(recorr_img)
+        #else:
+        #    input_img = 255.*recorr_img + VGG_MEANS
         
         with g.gradient_override_map({'Relu': 'Custom1', 
                                       'Relu6': 'Custom2'}):
@@ -123,7 +129,7 @@ def main(model,
             elif model == 'Inception_V3':
                 with slim.arg_scope(model_module.inception_v3_arg_scope()):
                     _, end_points = model_module.inception_v3(
-                    input_img, num_classes=1001, spatial_squeeze = False, is_training=False)
+                    recorr_img, num_classes=1001, spatial_squeeze = False, is_training=False)
         
         
         content_placeholders = {}
@@ -146,6 +152,8 @@ def main(model,
             
             content_placeholders[layer] = tf.placeholder(tf.float32, shape=[None,h,w,d])
             if model == 'Inception_V1':
+                content_losses[layer] = tf.reduce_mean(tf.abs(content_placeholders[layer] - g.get_tensor_by_name(layer)))
+            elif model == 'Inception_V3':
                 content_losses[layer] = tf.reduce_mean(tf.abs(content_placeholders[layer] - g.get_tensor_by_name(layer)))
             #content_losses[layer] = (1./(2.*np.sqrt(w.value*h.value)*np.sqrt(d.value)))*tf.reduce_sum(tf.pow(content_placeholders[layer] - g.get_tensor_by_name(layer),2))
             #content_losses[layer] = tf.reduce_sum(tf.pow(content_placeholders[layer] - g.get_tensor_by_name(layer), 2))
@@ -184,6 +192,11 @@ def main(model,
             tf.global_variables_initializer().run()
             restore_model(saver, model, sess)
             
+            op_list = sess.graph.get_operations()
+            #for op in op_list:
+            #    print("OP: ", op.name)
+
+
             if display_image_freq < float("inf"):
                 display_image(content_image)
                 display_image(style_image)
@@ -240,7 +253,8 @@ def main(model,
             while ((i < cycles) and (time.time()-start_time < training_time)):
                 # Perform update step
                 loss, _, temp_image, tcl, tsl = sess.run([total_loss, update, recorr_img, total_content_loss, total_style_loss], feed_dict=feed_dict)
-                if (i%jitter_freq==0 and i<jitter_stop_cycle and time.time()-start_time < jitter_stop_time):
+                if (i%jitter_freq==0 and i<jitter_stop_cycle and (i>jitter_start_cycle or time.time()-start_time > jitter_start_time)
+                    and time.time()-start_time < jitter_stop_time):
                     temp_image = np.roll(temp_image, shift = randint(-1,1), axis = randint(1,2))
                     sess.run(assign_jitter, feed_dict={var_input:temp_image})
                 # Print loss updates every 10 iterations

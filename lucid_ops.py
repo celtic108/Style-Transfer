@@ -23,7 +23,6 @@ def get_fourier_features(content_image):
                             [0.27, 0.00, -0.05],
                             [0.27, -0.09, 0.03]]).astype("float32")
             mnss = np.max(np.linalg.norm(ccss, axis=0))
-            print("MNSS: ", mnss)
             corr_matrix = (ccss / mnss).T
             def rfft2d_freqs(h,w):
                 fy = np.fft.fftfreq(h)[:,None]

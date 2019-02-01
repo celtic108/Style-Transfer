@@ -14,7 +14,7 @@
 import inception_style_transfer as istr
 import numpy as np
 
-model = 'Inception_V1'
+model = 'Inception_V3'
 
 content_weights = {}
 style_weights = {}
@@ -24,8 +24,10 @@ training_time = 60*(60*hours + minutes)
 display_image_freq=100
 jitter_freq = 3
 cycles=1000
-stop_jittering= 1.
+start_jittering = 0.1
+stop_jittering= .75
 max_image_dim = 512   
+random_initializer = True
 
 
 if model == 'Inception_V1':
@@ -39,18 +41,49 @@ if model == 'Inception_V1':
         alpha = 1 #Content Weight
         beta = 2.5    #Style Weight
     learning_rate = .01               
+    
     content_weights["InceptionV1/InceptionV1/Mixed_3b/concat:0"] = 1
+    
     style_weights["InceptionV1/InceptionV1/Conv2d_2c_3x3/Relu:0"] = 1
     style_weights["InceptionV1/InceptionV1/MaxPool_3a_3x3/MaxPool:0"] = 1
     style_weights["InceptionV1/InceptionV1/MaxPool_4a_3x3/MaxPool:0"] = 1
     style_weights["InceptionV1/InceptionV1/Mixed_4b/concat:0"] = 1
     style_weights["InceptionV1/InceptionV1/Mixed_4c/concat:0"] = 1
-    random_initializer = True
+
+elif model == 'Inception_V3':    
+    use_wass = True
+    if use_wass:
+        alpha = 300
+        beta = 1
+        display_image_freq = 10
+        cycles = 200
+    else:
+        alpha = 1 #Content Weight
+        beta = 6   #Style Weight
+    learning_rate = .01          
+    content_weights["InceptionV3/InceptionV3/Mixed_5b/concat:0"] = 1
+    #content_weights["InceptionV3/InceptionV3/Conv2d_4a_3x3/Conv2D:0"] = 1
+    
+    #style_weights["InceptionV3/InceptionV3/Conv2d_2a_3x3/Conv2D:0"] = .1
+    #style_weights["InceptionV3/InceptionV3/Conv2d_2b_3x3/Conv2D:0"] = .1
+    #style_weights["InceptionV3/InceptionV3/Conv2d_3b_1x1/Conv2D:0"] = .1
+    #style_weights["InceptionV3/InceptionV3/Conv2d_4a_3x3/Conv2D:0"] = 1
+    #style_weights["InceptionV3/InceptionV3/Mixed_5b/concat:0"] = 1
+    style_weights["InceptionV3/InceptionV3/Mixed_5c/concat:0"] = 1
+    style_weights["InceptionV3/InceptionV3/Mixed_6a/concat:0"] = 1
+    style_weights["InceptionV3/InceptionV3/Mixed_6b/concat:0"] = 1
+    style_weights["InceptionV3/InceptionV3/Mixed_6c/concat:0"] = 1
+    #style_weights["InceptionV3/InceptionV3/Mixed_6d/concat:0"] = 1
+    #style_weights["InceptionV3/InceptionV3/Mixed_6e/concat:0"] = 1
+    #style_weights["InceptionV3/InceptionV3/Mixed_7a/concat:0"] = 1
+    #style_weights["InceptionV3/InceptionV3/Mixed_7b/concat:0"] = 1
+    #style_weights["InceptionV3/InceptionV3/Mixed_7c/concat:0"] = 1
     
 
 
 
-#content_weights["InceptionV3/InceptionV3/Conv2d_2a_3x3/Conv2D:0"] = 1
+
+
 #content_weights["InceptionV3/InceptionV3/Mixed_5c/concat:0"] = 1
 #content_weights['vgg_19/conv4/conv4_3/Conv2D:0'] = 1
     
@@ -202,6 +235,7 @@ pre_calc_style_grams, content_targets = istr.main(model,
                                                   beta, 
                                                   cycles, 
                                                   training_time, 
+                                                  start_jittering,
                                                   stop_jittering, 
                                                   jitter_freq, 
                                                   display_image_freq, 
