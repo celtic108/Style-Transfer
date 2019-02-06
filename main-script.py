@@ -26,14 +26,14 @@ jitter_freq = 3
 cycles=1000
 start_jittering = 0.1
 stop_jittering= .75
-max_image_dim = 512   
+max_image_dim = 768  
 random_initializer = True
 
 
 if model == 'Inception_V1':
     use_wass = False
     if use_wass:
-        alpha = 300
+        alpha = 800
         beta = 1
         display_image_freq = 10
         cycles = 200
@@ -51,33 +51,27 @@ if model == 'Inception_V1':
     style_weights["InceptionV1/InceptionV1/Mixed_4c/concat:0"] = 1
 
 elif model == 'Inception_V3':    
-    use_wass = True
+    use_wass = False
     if use_wass:
-        alpha = 300
+        alpha = 200
         beta = 1
         display_image_freq = 10
         cycles = 200
+        learning_rate = 0.02
+        style_weights["InceptionV3/InceptionV3/Conv2d_2b_3x3/Relu:0"] = 1
+        style_weights["InceptionV3/InceptionV3/MaxPool_3a_3x3/MaxPool:0"] = 1
     else:
         alpha = 1 #Content Weight
-        beta = 6   #Style Weight
-    learning_rate = .01          
-    content_weights["InceptionV3/InceptionV3/Mixed_5b/concat:0"] = 1
-    #content_weights["InceptionV3/InceptionV3/Conv2d_4a_3x3/Conv2D:0"] = 1
+        beta = 1   #Style Weight
+        learning_rate = .02         
     
-    #style_weights["InceptionV3/InceptionV3/Conv2d_2a_3x3/Conv2D:0"] = .1
-    #style_weights["InceptionV3/InceptionV3/Conv2d_2b_3x3/Conv2D:0"] = .1
-    #style_weights["InceptionV3/InceptionV3/Conv2d_3b_1x1/Conv2D:0"] = .1
-    #style_weights["InceptionV3/InceptionV3/Conv2d_4a_3x3/Conv2D:0"] = 1
-    #style_weights["InceptionV3/InceptionV3/Mixed_5b/concat:0"] = 1
+    content_weights["InceptionV3/InceptionV3/Conv2d_3b_1x1/Relu:0"] = 1
+    
+    style_weights["InceptionV3/InceptionV3/Conv2d_4a_3x3/Relu:0"] = 1
+    style_weights["InceptionV3/InceptionV3/MaxPool_5a_3x3/MaxPool:0"] = 1
+    style_weights["InceptionV3/InceptionV3/Mixed_5b/concat:0"] = 1
     style_weights["InceptionV3/InceptionV3/Mixed_5c/concat:0"] = 1
-    style_weights["InceptionV3/InceptionV3/Mixed_6a/concat:0"] = 1
-    style_weights["InceptionV3/InceptionV3/Mixed_6b/concat:0"] = 1
-    style_weights["InceptionV3/InceptionV3/Mixed_6c/concat:0"] = 1
-    #style_weights["InceptionV3/InceptionV3/Mixed_6d/concat:0"] = 1
-    #style_weights["InceptionV3/InceptionV3/Mixed_6e/concat:0"] = 1
-    #style_weights["InceptionV3/InceptionV3/Mixed_7a/concat:0"] = 1
-    #style_weights["InceptionV3/InceptionV3/Mixed_7b/concat:0"] = 1
-    #style_weights["InceptionV3/InceptionV3/Mixed_7c/concat:0"] = 1
+    style_weights["InceptionV3/InceptionV3/Mixed_6a/concat:0"] = 0.5
     
 
 
@@ -90,123 +84,6 @@ elif model == 'Inception_V3':
 #style_weights["InceptionV3/InceptionV3/Conv2d_1a_3x3/Conv2D:0"] = 1
 #style_weights["recorr:0"] = 1
 
-"""
-style_weights["InceptionV3/InceptionV3/Conv2d_1a_3x3/Conv2D:0"] = 1e9
-style_weights["InceptionV3/InceptionV3/Conv2d_2a_3x3/Conv2D:0"] = 1e9
-style_weights["InceptionV3/InceptionV3/Conv2d_2b_3x3/Conv2D:0"] = 1e9
-style_weights["InceptionV3/InceptionV3/Conv2d_3b_1x1/Conv2D:0"] = 1e9
-style_weights["InceptionV3/InceptionV3/Conv2d_4a_3x3/Conv2D:0"] = 1e9
-"""
-"""style_weights["InceptionV3/InceptionV3/Mixed_5b/Branch_0/Conv2d_0a_1x1/Conv2D:0"] = 1e9
-style_weights["InceptionV3/InceptionV3/Mixed_5b/Branch_1/Conv2d_0a_1x1/Conv2D:0"] = 1e9
-style_weights["InceptionV3/InceptionV3/Mixed_5b/Branch_1/Conv2d_0b_5x5/Conv2D:0"] = 1e9
-style_weights["InceptionV3/InceptionV3/Mixed_5b/Branch_2/Conv2d_0a_1x1/Conv2D:0"] = 1e9
-style_weights["InceptionV3/InceptionV3/Mixed_5b/Branch_2/Conv2d_0b_3x3/Conv2D:0"] = 1e9
-style_weights["InceptionV3/InceptionV3/Mixed_5b/Branch_2/Conv2d_0c_3x3/Conv2D:0"] = 1e9
-style_weights["InceptionV3/InceptionV3/Mixed_5b/Branch_3/Conv2d_0b_1x1/Conv2D:0"] = 1e9
-style_weights["InceptionV3/InceptionV3/Mixed_5c/Branch_0/Conv2d_0a_1x1/Conv2D:0"] = 1e9
-style_weights["InceptionV3/InceptionV3/Mixed_5c/Branch_1/Conv2d_0b_1x1/Conv2D:0"] = 1e9
-style_weights["InceptionV3/InceptionV3/Mixed_5c/Branch_1/Conv_1_0c_5x5/Conv2D:0"] = 1e9
-style_weights["InceptionV3/InceptionV3/Mixed_5c/Branch_2/Conv2d_0a_1x1/Conv2D:0"] = 1e9
-style_weights["InceptionV3/InceptionV3/Mixed_5c/Branch_2/Conv2d_0b_3x3/Conv2D:0"] = 1e9
-style_weights["InceptionV3/InceptionV3/Mixed_5c/Branch_2/Conv2d_0c_3x3/Conv2D:0"] = 1e9
-style_weights["InceptionV3/InceptionV3/Mixed_5c/Branch_3/Conv2d_0b_1x1/Conv2D:0"] = 1e9
-style_weights["InceptionV3/InceptionV3/Mixed_5d/Branch_0/Conv2d_0a_1x1/Conv2D:0"] = 1e9
-style_weights["InceptionV3/InceptionV3/Mixed_5d/Branch_1/Conv2d_0a_1x1/Conv2D:0"] = 1e9
-style_weights["InceptionV3/InceptionV3/Mixed_5d/Branch_1/Conv2d_0b_5x5/Conv2D:0"] = 1e9
-style_weights["InceptionV3/InceptionV3/Mixed_5d/Branch_2/Conv2d_0a_1x1/Conv2D:0"] = 1e9
-style_weights["InceptionV3/InceptionV3/Mixed_5d/Branch_2/Conv2d_0b_3x3/Conv2D:0"] = 1e9
-style_weights["InceptionV3/InceptionV3/Mixed_5d/Branch_2/Conv2d_0c_3x3/Conv2D:0"] = 1e9
-style_weights["InceptionV3/InceptionV3/Mixed_5d/Branch_3/Conv2d_0b_1x1/Conv2D:0"] = 1e9
-"""
-"""
-style_weights["InceptionV3/InceptionV3/Mixed_6a/Branch_0/Conv2d_1a_1x1/Conv2D:0"] = 1e9
-style_weights["InceptionV3/InceptionV3/Mixed_6a/Branch_1/Conv2d_0a_1x1/Conv2D:0"] = 1e9
-style_weights["InceptionV3/InceptionV3/Mixed_6a/Branch_1/Conv2d_0b_3x3/Conv2D:0"] = 1e9
-style_weights["InceptionV3/InceptionV3/Mixed_6a/Branch_1/Conv2d_1a_1x1/Conv2D:0"] = 1e9
-style_weights["InceptionV3/InceptionV3/Mixed_6b/Branch_0/Conv2d_0a_1x1/Conv2D:0"] = 1e9
-style_weights["InceptionV3/InceptionV3/Mixed_6b/Branch_1/Conv2d_0a_1x1/Conv2D:0"] = 1e9
-style_weights["InceptionV3/InceptionV3/Mixed_6b/Branch_1/Conv2d_0b_1x7/Conv2D:0"] = 1e9
-style_weights["InceptionV3/InceptionV3/Mixed_6b/Branch_1/Conv2d_0c_7x1/Conv2D:0"] = 1e9
-style_weights["InceptionV3/InceptionV3/Mixed_6b/Branch_2/Conv2d_0a_1x1/Conv2D:0"] = 1e9
-style_weights["InceptionV3/InceptionV3/Mixed_6b/Branch_2/Conv2d_0b_7x1/Conv2D:0"] = 1e9
-style_weights["InceptionV3/InceptionV3/Mixed_6b/Branch_2/Conv2d_0c_1x7/Conv2D:0"] = 1e9
-style_weights["InceptionV3/InceptionV3/Mixed_6b/Branch_2/Conv2d_0d_7x1/Conv2D:0"] = 1e9
-style_weights["InceptionV3/InceptionV3/Mixed_6b/Branch_2/Conv2d_0e_1x7/Conv2D:0"] = 1e9
-style_weights["InceptionV3/InceptionV3/Mixed_6b/Branch_3/Conv2d_0b_1x1/Conv2D:0"] = 1e9
-style_weights["InceptionV3/InceptionV3/Mixed_6c/Branch_0/Conv2d_0a_1x1/Conv2D:0"] = 1e9
-style_weights["InceptionV3/InceptionV3/Mixed_6c/Branch_1/Conv2d_0a_1x1/Conv2D:0"] = 1e9
-style_weights["InceptionV3/InceptionV3/Mixed_6c/Branch_1/Conv2d_0b_1x7/Conv2D:0"] = 1e9
-style_weights["InceptionV3/InceptionV3/Mixed_6c/Branch_1/Conv2d_0c_7x1/Conv2D:0"] = 1e9
-style_weights["InceptionV3/InceptionV3/Mixed_6c/Branch_2/Conv2d_0a_1x1/Conv2D:0"] = 1e9
-style_weights["InceptionV3/InceptionV3/Mixed_6c/Branch_2/Conv2d_0b_7x1/Conv2D:0"] = 1e9
-style_weights["InceptionV3/InceptionV3/Mixed_6c/Branch_2/Conv2d_0c_1x7/Conv2D:0"] = 1e9
-style_weights["InceptionV3/InceptionV3/Mixed_6c/Branch_2/Conv2d_0d_7x1/Conv2D:0"] = 1e9
-style_weights["InceptionV3/InceptionV3/Mixed_6c/Branch_2/Conv2d_0e_1x7/Conv2D:0"] = 1e9
-style_weights["InceptionV3/InceptionV3/Mixed_6c/Branch_3/Conv2d_0b_1x1/Conv2D:0"] = 1e9
-style_weights["InceptionV3/InceptionV3/Mixed_6d/Branch_0/Conv2d_0a_1x1/Conv2D:0"] = 1e9
-style_weights["InceptionV3/InceptionV3/Mixed_6d/Branch_1/Conv2d_0a_1x1/Conv2D:0"] = 1e9
-style_weights["InceptionV3/InceptionV3/Mixed_6d/Branch_1/Conv2d_0b_1x7/Conv2D:0"] = 1e9
-style_weights["InceptionV3/InceptionV3/Mixed_6d/Branch_1/Conv2d_0c_7x1/Conv2D:0"] = 1e9
-style_weights["InceptionV3/InceptionV3/Mixed_6d/Branch_2/Conv2d_0a_1x1/Conv2D:0"] = 1e9
-style_weights["InceptionV3/InceptionV3/Mixed_6d/Branch_2/Conv2d_0b_7x1/Conv2D:0"] = 1e9
-style_weights["InceptionV3/InceptionV3/Mixed_6d/Branch_2/Conv2d_0c_1x7/Conv2D:0"] = 1e9
-style_weights["InceptionV3/InceptionV3/Mixed_6d/Branch_2/Conv2d_0d_7x1/Conv2D:0"] = 1e9
-style_weights["InceptionV3/InceptionV3/Mixed_6d/Branch_2/Conv2d_0e_1x7/Conv2D:0"] = 1e9
-style_weights["InceptionV3/InceptionV3/Mixed_6d/Branch_3/Conv2d_0b_1x1/Conv2D:0"] = 1e9
-style_weights["InceptionV3/InceptionV3/Mixed_6e/Branch_0/Conv2d_0a_1x1/Conv2D:0"] = 1e9
-style_weights["InceptionV3/InceptionV3/Mixed_6e/Branch_1/Conv2d_0a_1x1/Conv2D:0"] = 1e9
-style_weights["InceptionV3/InceptionV3/Mixed_6e/Branch_1/Conv2d_0b_1x7/Conv2D:0"] = 1e9
-style_weights["InceptionV3/InceptionV3/Mixed_6e/Branch_1/Conv2d_0c_7x1/Conv2D:0"] = 1e9
-style_weights["InceptionV3/InceptionV3/Mixed_6e/Branch_2/Conv2d_0a_1x1/Conv2D:0"] = 1e9
-style_weights["InceptionV3/InceptionV3/Mixed_6e/Branch_2/Conv2d_0b_7x1/Conv2D:0"] = 1e9
-style_weights["InceptionV3/InceptionV3/Mixed_6e/Branch_2/Conv2d_0c_1x7/Conv2D:0"] = 1e9
-style_weights["InceptionV3/InceptionV3/Mixed_6e/Branch_2/Conv2d_0d_7x1/Conv2D:0"] = 1e9
-style_weights["InceptionV3/InceptionV3/Mixed_6e/Branch_2/Conv2d_0e_1x7/Conv2D:0"] = 1e9
-style_weights["InceptionV3/InceptionV3/Mixed_6e/Branch_3/Conv2d_0b_1x1/Conv2D:0"] = 1e9
-"""
-"""style_weights["InceptionV3/InceptionV3/Mixed_7a/Branch_0/Conv2d_0a_1x1/Conv2D:0"] = 1e9
-style_weights["InceptionV3/InceptionV3/Mixed_7a/Branch_0/Conv2d_1a_3x3/Conv2D:0"] = 1e9
-style_weights["InceptionV3/InceptionV3/Mixed_7a/Branch_1/Conv2d_0a_1x1/Conv2D:0"] = 1e9
-style_weights["InceptionV3/InceptionV3/Mixed_7a/Branch_1/Conv2d_0b_1x7/Conv2D:0"] = 1e9
-style_weights["InceptionV3/InceptionV3/Mixed_7a/Branch_1/Conv2d_0c_7x1/Conv2D:0"] = 1e9
-style_weights["InceptionV3/InceptionV3/Mixed_7a/Branch_1/Conv2d_1a_3x3/Conv2D:0"] = 1e9
-style_weights["InceptionV3/InceptionV3/Mixed_7b/Branch_0/Conv2d_0a_1x1/Conv2D:0"] = 1e9
-style_weights["InceptionV3/InceptionV3/Mixed_7b/Branch_1/Conv2d_0a_1x1/Conv2D:0"] = 1e9
-style_weights["InceptionV3/InceptionV3/Mixed_7b/Branch_1/Conv2d_0b_1x3/Conv2D:0"] = 1e9
-style_weights["InceptionV3/InceptionV3/Mixed_7b/Branch_1/Conv2d_0b_3x1/Conv2D:0"] = 1e9
-style_weights["InceptionV3/InceptionV3/Mixed_7b/Branch_2/Conv2d_0a_1x1/Conv2D:0"] = 1e9
-style_weights["InceptionV3/InceptionV3/Mixed_7b/Branch_2/Conv2d_0b_3x3/Conv2D:0"] = 1e9
-style_weights["InceptionV3/InceptionV3/Mixed_7b/Branch_2/Conv2d_0c_1x3/Conv2D:0"] = 1e9
-style_weights["InceptionV3/InceptionV3/Mixed_7b/Branch_2/Conv2d_0d_3x1/Conv2D:0"] = 1e9
-style_weights["InceptionV3/InceptionV3/Mixed_7b/Branch_3/Conv2d_0b_1x1/Conv2D:0"] = 1e9
-style_weights["InceptionV3/InceptionV3/Mixed_7c/Branch_0/Conv2d_0a_1x1/Conv2D:0"] = 1e9
-style_weights["InceptionV3/InceptionV3/Mixed_7c/Branch_1/Conv2d_0a_1x1/Conv2D:0"] = 1e9
-style_weights["InceptionV3/InceptionV3/Mixed_7c/Branch_1/Conv2d_0b_1x3/Conv2D:0"] = 1e9
-style_weights["InceptionV3/InceptionV3/Mixed_7c/Branch_1/Conv2d_0c_3x1/Conv2D:0"] = 1e9
-style_weights["InceptionV3/InceptionV3/Mixed_7c/Branch_2/Conv2d_0a_1x1/Conv2D:0"] = 1e9
-style_weights["InceptionV3/InceptionV3/Mixed_7c/Branch_2/Conv2d_0b_3x3/Conv2D:0"] = 1e9
-style_weights["InceptionV3/InceptionV3/Mixed_7c/Branch_2/Conv2d_0c_1x3/Conv2D:0"] = 1e9
-style_weights["InceptionV3/InceptionV3/Mixed_7c/Branch_2/Conv2d_0d_3x1/Conv2D:0"] = 1e9
-style_weights["InceptionV3/InceptionV3/Mixed_7c/Branch_3/Conv2d_0b_1x1/Conv2D:0"] = 1e9
-"""
-
-#style_weights["InceptionV3/InceptionV3/Conv2d_2a_3x3/Conv2D:0"] = 1e9
-#style_weights["InceptionV3/InceptionV3/Conv2d_2b_3x3/Conv2D:0"] = 1e9
-#style_weights["InceptionV3/InceptionV3/Conv2d_3b_1x1/Conv2D:0"] = 1e8
-#style_weights["InceptionV3/InceptionV3/Conv2d_4a_3x3/Conv2D:0"] = 1e8
-"""        
-style_weights["InceptionV3/InceptionV3/Mixed_5b/concat:0"] = 1e8
-style_weights["InceptionV3/InceptionV3/Mixed_5c/concat:0"] = 1e8
-style_weights["InceptionV3/InceptionV3/Mixed_6a/concat:0"] = 1e9
-style_weights["InceptionV3/InceptionV3/Mixed_6b/concat:0"] = 1e9
-style_weights["InceptionV3/InceptionV3/Mixed_6c/concat:0"] = 1e9
-style_weights["InceptionV3/InceptionV3/Mixed_6d/concat:0"] = 1e9
-style_weights["InceptionV3/InceptionV3/Mixed_6e/concat:0"] = 1e9
-"""
-#style_weights["InceptionV3/InceptionV3/Mixed_7a/concat:0"] = 1
-#style_weights["InceptionV3/InceptionV3/Mixed_7b/concat:0"] = 1
-#style_weights["InceptionV3/InceptionV3/Mixed_7c/concat:0"] = 1
 
 
 #style_weights['vgg_19/conv1/conv1_1/Conv2D:0'] = 100 #
@@ -226,21 +103,20 @@ style_weights["InceptionV3/InceptionV3/Mixed_6e/concat:0"] = 1e9
 #style_weights['vgg_19/conv5/conv5_3/Conv2D:0'] = 2#
 #style_weights['vgg_19/conv5/conv5_4/Conv2D:0'] = 1
 
-
-pre_calc_style_grams, content_targets = istr.main(model, 
-                                                  content_weights, 
-                                                  style_weights, 
-                                                  learning_rate,
-                                                  alpha, 
-                                                  beta, 
-                                                  cycles, 
-                                                  training_time, 
-                                                  start_jittering,
-                                                  stop_jittering, 
-                                                  jitter_freq, 
-                                                  display_image_freq, 
-                                                  max_image_dim = max_image_dim,
-                                                  random_initializer = random_initializer,
-                                                  use_wass = use_wass)
+istr.main(model, 
+          content_weights, 
+          style_weights, 
+          learning_rate,
+          alpha, 
+          beta, 
+          cycles, 
+          training_time, 
+          start_jittering,
+          stop_jittering, 
+          jitter_freq, 
+          display_image_freq, 
+          max_image_dim = max_image_dim,
+          random_initializer = random_initializer,
+          use_wass = use_wass)
         
         

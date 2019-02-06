@@ -117,19 +117,18 @@ def main(model,
         rgb_space = rgb_space[:,:h,:w,:ch] / 4.0
         recorr_img = tf.reshape(tf.matmul(tf.reshape(rgb_space, [-1,3]), decorrelate_matrix), [1,content_image.shape[1],content_image.shape[2],3])
         #sigmoid_img = tf.nn.sigmoid(recorr_img)
-        #else:
-        #    input_img = 255.*recorr_img + VGG_MEANS
+        input_img = (recorr_img + 1.0) / 2.0
         
         with g.gradient_override_map({'Relu': 'Custom1', 
                                       'Relu6': 'Custom2'}):
             if model == 'Inception_V1':
                 with slim.arg_scope(model_module.inception_v1_arg_scope()):
                     _, end_points = model_module.inception_v1(
-                    recorr_img, num_classes=1001, spatial_squeeze = False, is_training=False)
+                    input_img, num_classes=1001, spatial_squeeze = False, is_training=False)
             elif model == 'Inception_V3':
                 with slim.arg_scope(model_module.inception_v3_arg_scope()):
                     _, end_points = model_module.inception_v3(
-                    recorr_img, num_classes=1001, spatial_squeeze = False, is_training=False)
+                    input_img, num_classes=1001, spatial_squeeze = False, is_training=False)
         
         
         content_placeholders = {}
@@ -151,9 +150,7 @@ def main(model,
             _, h, w, d = g.get_tensor_by_name(layer).get_shape()
             
             content_placeholders[layer] = tf.placeholder(tf.float32, shape=[None,h,w,d])
-            if model == 'Inception_V1':
-                content_losses[layer] = tf.reduce_mean(tf.abs(content_placeholders[layer] - g.get_tensor_by_name(layer)))
-            elif model == 'Inception_V3':
+            if model == 'Inception_V1' or model == 'Inception_V3':
                 content_losses[layer] = tf.reduce_mean(tf.abs(content_placeholders[layer] - g.get_tensor_by_name(layer)))
             #content_losses[layer] = (1./(2.*np.sqrt(w.value*h.value)*np.sqrt(d.value)))*tf.reduce_sum(tf.pow(content_placeholders[layer] - g.get_tensor_by_name(layer),2))
             #content_losses[layer] = tf.reduce_sum(tf.pow(content_placeholders[layer] - g.get_tensor_by_name(layer), 2))
@@ -177,10 +174,10 @@ def main(model,
             else:
                 input_grams[layer] = gram(g.get_tensor_by_name(layer))
                 style_gram_placeholders[layer] = tf.placeholder(tf.float32, shape = input_grams[layer].get_shape())
-                style_losses[layer] = style_weights[layer] * tf.reduce_mean(tf.abs(input_grams[layer] - style_gram_placeholders[layer]))
+                style_losses[layer] = tf.reduce_mean(tf.abs(input_grams[layer] - style_gram_placeholders[layer]))
             #style_losses[layer] = style_weights[layer]*(1. / (4*N**2 * M**2)) * tf.reduce_sum(tf.pow(input_grams[layer] - style_gram_placeholders[layer], 2))
             #style_losses[layer] = style_weights[layer] * tf.reduce_sum(tf.pow(input_grams[layer] - style_gram_placeholders[layer], 2))
-            total_style_loss += style_losses[layer]
+            total_style_loss += style_weights[layer] * style_losses[layer]
 	    
         total_loss = alpha*total_content_loss + beta*total_style_loss 
         
@@ -193,8 +190,8 @@ def main(model,
             restore_model(saver, model, sess)
             
             op_list = sess.graph.get_operations()
-            #for op in op_list:
-            #    print("OP: ", op.name)
+            for op in op_list:
+                print("OP: ", op.name)
 
 
             if display_image_freq < float("inf"):
@@ -230,8 +227,10 @@ def main(model,
                 content_targets[layer] = sess.run(g.get_tensor_by_name(layer))
             
             if random_initializer:
-                init_val = sess.run(four_space, feed_dict = {var_input: np.random.rand(*content_image.shape)/100 + 0.5})
-                reassign_random = four_input.assign(init_val)
+                #init_val = sess.run(four_space, feed_dict = {var_input: np.random.randn(*content_image.shape)/10 + 0.5})
+                #reassign_random = four_input.assign(init_val)
+                reassign_random = four_input.assign(np.random.normal(size = (2, 3, content_image.shape[1], (content_image.shape[2] + 2) // 2),
+                                                                     scale = 0.01))
                 sess.run(reassign_random)
 
             assign_jitter = four_input.assign(four_space)
@@ -250,6 +249,7 @@ def main(model,
             start_time = time.time()
             i=0
             _, h, w, d = content_image.shape
+
             while ((i < cycles) and (time.time()-start_time < training_time)):
                 # Perform update step
                 loss, _, temp_image, tcl, tsl = sess.run([total_loss, update, recorr_img, total_content_loss, total_style_loss], feed_dict=feed_dict)
@@ -275,6 +275,5 @@ def main(model,
             if (time.time()-start_time > training_time):
                 print("Reached Time Limit: ", time.time()-start_time)
                 
-    return (pre_calc_style_grams, content_targets)
-
+    
           

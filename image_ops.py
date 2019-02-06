@@ -26,7 +26,6 @@ def display_image(gen_pixels, save=True, name=0):
     else:
         height = gen_pixels.shape[0]
         width = gen_pixels.shape[1]
-    print("Image shape: ", gen_pixels.shape)
     pix = Image.fromarray(np.clip(gen_pixels[0],0,255).astype('uint8'))
     pix.show()
     if save:
@@ -63,11 +62,11 @@ def load_images(input_dir, max_image_dim = float('inf'), target_shape = None):
                 print("Found file that was not an image. Keep looking.")
 
 def preprocess(image):
-    #image = ((image/255.)-0.5)*2
-    image = image/255.
+    image = ((image/255.)-0.5)*2
+    #image = image/255.
     return image
     
 def un_preprocess(image):
-    return 255.*image
-    #return 255.*(image +1)/2.
+    #return 255.*image
+    return 255.*(image +1)/2.
 
