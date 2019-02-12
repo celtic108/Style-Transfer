@@ -102,8 +102,6 @@ def main(model,
 
         decorrelate_matrix = tf.constant(corr_matrix, shape=[3,3])
         #un_sigmoid = -1*tf.log(tf.pow(var_input, -1)-1)
-        #VGG_MEANS = np.array([[[[123.68, 116.78, 103.94]]]]).astype('float32')
-        #VGG_MEANS = tf.constant(VGG_MEANS, shape=[1,1,1,3])
         var_decor = tf.reshape(tf.matmul(tf.reshape(var_input, [-1, 3]), tf.matrix_inverse(decorrelate_matrix)), [1,content_image.shape[1],content_image.shape[2],3]) * 4.0
         four_space_complex = tf.spectral.rfft2d(tf.transpose(var_decor, perm=[0,3,1,2]))
         four_space_complex = four_space_complex / scale
@@ -117,7 +115,16 @@ def main(model,
         rgb_space = rgb_space[:,:h,:w,:ch] / 4.0
         recorr_img = tf.reshape(tf.matmul(tf.reshape(rgb_space, [-1,3]), decorrelate_matrix), [1,content_image.shape[1],content_image.shape[2],3])
         #sigmoid_img = tf.nn.sigmoid(recorr_img)
-        input_img = (recorr_img + 1.0) / 2.0
+        input_img = (tf.clip_by_value(recorr_img, -1., 1.) + 1.0) / 2.0
+        #VGG_MEANS = np.array([[[[123.68, 116.78, 103.94]]]]).astype('float32')
+        VGG_MEANS = np.array([[[[0.485, 0.456, 0.406]]]]).astype('float32')
+        VGG_MEANS = tf.constant(VGG_MEANS, shape=[1,1,1,3])
+        #VGG_STDS = np.array([[[[0.229, 0.224, 0.225]]]]).astype('float32')
+        #VGG_STDS = tf.constant(VGG_STDS, shape=[1,1,1,3])
+        vgg_input = (input_img - VGG_MEANS) * 255.0
+        bgr_input = tf.stack([vgg_input[:,:,:,2], 
+                              vgg_input[:,:,:,1], 
+                              vgg_input[:,:,:,0]], axis=-1)
         
         with g.gradient_override_map({'Relu': 'Custom1', 
                                       'Relu6': 'Custom2'}):
@@ -129,7 +136,10 @@ def main(model,
                 with slim.arg_scope(model_module.inception_v3_arg_scope()):
                     _, end_points = model_module.inception_v3(
                     input_img, num_classes=1001, spatial_squeeze = False, is_training=False)
-        
+            elif model == 'VGG_19':
+                with slim.arg_scope(model_module.vgg_arg_scope()):
+                    _, end_points = model_module.vgg_19(
+                    bgr_input, num_classes=1000, spatial_squeeze = False, is_training=False)
         
         content_placeholders = {}
         content_losses = {}
@@ -150,8 +160,7 @@ def main(model,
             _, h, w, d = g.get_tensor_by_name(layer).get_shape()
             
             content_placeholders[layer] = tf.placeholder(tf.float32, shape=[None,h,w,d])
-            if model == 'Inception_V1' or model == 'Inception_V3':
-                content_losses[layer] = tf.reduce_mean(tf.abs(content_placeholders[layer] - g.get_tensor_by_name(layer)))
+            content_losses[layer] = tf.reduce_mean(tf.abs(content_placeholders[layer] - g.get_tensor_by_name(layer)))
             #content_losses[layer] = (1./(2.*np.sqrt(w.value*h.value)*np.sqrt(d.value)))*tf.reduce_sum(tf.pow(content_placeholders[layer] - g.get_tensor_by_name(layer),2))
             #content_losses[layer] = tf.reduce_sum(tf.pow(content_placeholders[layer] - g.get_tensor_by_name(layer), 2))
             total_content_loss += content_losses[layer]*content_weights[layer]
@@ -187,12 +196,11 @@ def main(model,
             
         with tf.Session() as sess:
             tf.global_variables_initializer().run()
-            restore_model(saver, model, sess)
+            #restore_model(saver, model, sess)
             
             op_list = sess.graph.get_operations()
             for op in op_list:
                 print("OP: ", op.name)
-
 
             if display_image_freq < float("inf"):
                 display_image(content_image)
@@ -250,6 +258,10 @@ def main(model,
             i=0
             _, h, w, d = content_image.shape
 
+
+            print("VGG_INPUT: ", sess.run(vgg_input).shape)
+            print("BGR_INPUT: ", sess.run(bgr_input).shape)
+
             while ((i < cycles) and (time.time()-start_time < training_time)):
                 # Perform update step
                 loss, _, temp_image, tcl, tsl = sess.run([total_loss, update, recorr_img, total_content_loss, total_style_loss], feed_dict=feed_dict)
@@ -263,6 +275,9 @@ def main(model,
                 # Display image 
                 if display_image_freq < float("inf"):
                     if i%display_image_freq==0:
+                        print(temp_image)
+                        print(np.amin(temp_image))
+                        print(np.amax(temp_image))
                         #image_out = un_preprocess(np.clip(sess.run(recorr_img), -1., 1.))
                         display_image(un_preprocess(np.clip(temp_image, -1., 1.)), True, i)
                 i += 1
