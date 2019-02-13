@@ -33,12 +33,12 @@ random_initializer = True
 if model == 'Inception_V1':
     use_wass = False
     if use_wass:
-        alpha = 800
-        beta = 1
+        alpha = 800   #Content Weight
+        beta = 1      #Style Weight
         display_image_freq = 10
         cycles = 200
     else:
-        alpha = 1 #Content Weight
+        alpha = 1     #Content Weight
         beta = 2.5    #Style Weight
     learning_rate = .01               
     
@@ -53,16 +53,16 @@ if model == 'Inception_V1':
 elif model == 'Inception_V3':    
     use_wass = False
     if use_wass:
-        alpha = 200
-        beta = 1
+        alpha = 200   #Content Weight
+        beta = 1      #Style Weight
         display_image_freq = 10
         cycles = 200
         learning_rate = 0.02
         style_weights["InceptionV3/InceptionV3/Conv2d_2b_3x3/Relu:0"] = 1
         style_weights["InceptionV3/InceptionV3/MaxPool_3a_3x3/MaxPool:0"] = 1
     else:
-        alpha = 1 #Content Weight
-        beta = 1   #Style Weight
+        alpha = 1     #Content Weight
+        beta = 1      #Style Weight
         learning_rate = .02         
     
     content_weights["InceptionV3/InceptionV3/Conv2d_3b_1x1/Relu:0"] = 1
@@ -74,62 +74,27 @@ elif model == 'Inception_V3':
     style_weights["InceptionV3/InceptionV3/Mixed_6a/concat:0"] = 0.5
     
 elif model == 'VGG_19':    
-    use_wass = False
-    #jitter_freq = float('inf')
+    use_wass = True
     if use_wass:
-        alpha = 0
-        beta = 1
+        jitter_freq = float('inf')
+        alpha = 1      #Content Weight
+        beta = 5e-6    #Style Weight
         display_image_freq = 10
         cycles = 200
         learning_rate = 0.02
-        style_weights["InceptionV3/InceptionV3/Conv2d_2b_3x3/Relu:0"] = 1
-        style_weights["InceptionV3/InceptionV3/MaxPool_3a_3x3/MaxPool:0"] = 1
     else:
-        alpha = 0#.001 #Content Weight
-        beta = .00001   #Style Weight
-        learning_rate = 1        
+        alpha = 1     #Content Weight
+        beta = .005   #Style Weight
+        learning_rate = .01       
     
-    #content_weights['vgg_19/conv3/conv3_2/Conv2D:0'] = 1
-    content_weights['vgg_19/conv5/conv5_4/Conv2D:0'] = 1
+    content_weights['vgg_19/conv3/conv3_2/Conv2D:0'] = 1
     
-    #style_weights["InceptionV3/InceptionV3/Conv2d_1a_3x3/Conv2D:0"] = 1
-    #style_weights["recorr:0"] = 1
-
-    #style_weights['vgg_19/conv1/conv1_1/Conv2D:0'] = 1
     style_weights['vgg_19/conv1/conv1_2/Conv2D:0'] = 1
-    #style_weights['vgg_19/conv2/conv2_1/Relu:0'] = 1
     style_weights['vgg_19/conv2/conv2_2/Conv2D:0'] = 1
-    #style_weights['vgg_19/conv3/conv3_1/Relu:0'] = 1/2
-    #style_weights['vgg_19/conv3/conv3_2/Conv2D:0'] = 1
     style_weights['vgg_19/conv3/conv3_3/Conv2D:0'] = 1
-    #style_weights['vgg_19/conv3/conv3_4/Conv2D:0'] = 1
-    #style_weights['vgg_19/conv4/conv4_1/Relu:0'] = 1/.1
-    #style_weights['vgg_19/conv4/conv4_2/Relu:0'] = 1
     style_weights['vgg_19/conv4/conv4_3/Conv2D:0'] = 1
-    #style_weights['vgg_19/conv4/conv4_4/Conv2D:0'] = 1
-    #style_weights['vgg_19/conv5/conv5_1/Conv2D:0'] = 1
-    #style_weights['vgg_19/conv5/conv5_2/Conv2D:0'] = 1
     style_weights['vgg_19/conv5/conv5_3/Conv2D:0'] = 1
-    #style_weights['vgg_19/conv5/conv5_4/Conv2D:0'] = 1
-
-
-    #style_weights['vgg_19/conv1/conv1_1/Conv2D:0'] = 100 #
-#style_weights['vgg_19/conv1/conv1_2/Conv2D:0'] = 1
-#style_weights['vgg_19/conv2/conv2_1/Conv2D:0'] = .05
-#style_weights['vgg_19/conv2/conv2_2/Conv2D:0'] = .02
-#style_weights['vgg_19/conv3/conv3_1/Conv2D:0'] = .01#
-#style_weights['vgg_19/conv3/conv3_2/Conv2D:0'] = .02
-#style_weights['vgg_19/conv3/conv3_3/Conv2D:0'] = .005#
-#style_weights['vgg_19/conv3/conv3_4/Conv2D:0'] = .0005
-#style_weights['vgg_19/conv4/conv4_1/Conv2D:0'] = .0001#
-#style_weights['vgg_19/conv4/conv4_2/Conv2D:0'] = .0001
-#style_weights['vgg_19/conv4/conv4_3/Conv2D:0'] = .0001#
-#style_weights['vgg_19/conv4/conv4_4/Conv2D:0'] = .001
-#style_weights['vgg_19/conv5/conv5_1/Conv2D:0'] = .01#
-#style_weights['vgg_19/conv5/conv5_2/Conv2D:0'] = .1
-#style_weights['vgg_19/conv5/conv5_3/Conv2D:0'] = 2#
-#style_weights['vgg_19/conv5/conv5_4/Conv2D:0'] = 1
-
+    
 istr.main(model, 
           content_weights, 
           style_weights, 

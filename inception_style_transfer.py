@@ -62,7 +62,6 @@ def main(model,
     # Display image frequency - Number of training cycles between displaying the result image
     # Maximum image dimension - Scale down the largest dimension of the content image to match this
     
-    # Returns the pre-calculated style grams and content targets. This allows multiple trials without the need for recalculating these each time
     
     if model in ['Inception_V1', 'Inception_V3']:
         from tensorflow.contrib.slim.nets import inception as model_module
@@ -101,7 +100,6 @@ def main(model,
         init_val, scale, corr_matrix = lucid_ops.get_fourier_features(content_image)
 
         decorrelate_matrix = tf.constant(corr_matrix, shape=[3,3])
-        #un_sigmoid = -1*tf.log(tf.pow(var_input, -1)-1)
         var_decor = tf.reshape(tf.matmul(tf.reshape(var_input, [-1, 3]), tf.matrix_inverse(decorrelate_matrix)), [1,content_image.shape[1],content_image.shape[2],3]) * 4.0
         four_space_complex = tf.spectral.rfft2d(tf.transpose(var_decor, perm=[0,3,1,2]))
         four_space_complex = four_space_complex / scale
@@ -114,13 +112,9 @@ def main(model,
         rgb_space = tf.expand_dims(tf.transpose(tf.spectral.irfft2d(four_to_complex), perm = [1,2,0]), axis=0)
         rgb_space = rgb_space[:,:h,:w,:ch] / 4.0
         recorr_img = tf.reshape(tf.matmul(tf.reshape(rgb_space, [-1,3]), decorrelate_matrix), [1,content_image.shape[1],content_image.shape[2],3])
-        #sigmoid_img = tf.nn.sigmoid(recorr_img)
-        input_img = (tf.clip_by_value(recorr_img, -1., 1.) + 1.0) / 2.0
-        #VGG_MEANS = np.array([[[[123.68, 116.78, 103.94]]]]).astype('float32')
+        input_img = (recorr_img + 1.0) / 2.0
         VGG_MEANS = np.array([[[[0.485, 0.456, 0.406]]]]).astype('float32')
         VGG_MEANS = tf.constant(VGG_MEANS, shape=[1,1,1,3])
-        #VGG_STDS = np.array([[[[0.229, 0.224, 0.225]]]]).astype('float32')
-        #VGG_STDS = tf.constant(VGG_STDS, shape=[1,1,1,3])
         vgg_input = (input_img - VGG_MEANS) * 255.0
         bgr_input = tf.stack([vgg_input[:,:,:,2], 
                               vgg_input[:,:,:,1], 
@@ -161,8 +155,6 @@ def main(model,
             
             content_placeholders[layer] = tf.placeholder(tf.float32, shape=[None,h,w,d])
             content_losses[layer] = tf.reduce_mean(tf.abs(content_placeholders[layer] - g.get_tensor_by_name(layer)))
-            #content_losses[layer] = (1./(2.*np.sqrt(w.value*h.value)*np.sqrt(d.value)))*tf.reduce_sum(tf.pow(content_placeholders[layer] - g.get_tensor_by_name(layer),2))
-            #content_losses[layer] = tf.reduce_sum(tf.pow(content_placeholders[layer] - g.get_tensor_by_name(layer), 2))
             total_content_loss += content_losses[layer]*content_weights[layer]
             
         for layer in style_weights.keys():
@@ -184,8 +176,6 @@ def main(model,
                 input_grams[layer] = gram(g.get_tensor_by_name(layer))
                 style_gram_placeholders[layer] = tf.placeholder(tf.float32, shape = input_grams[layer].get_shape())
                 style_losses[layer] = tf.reduce_mean(tf.abs(input_grams[layer] - style_gram_placeholders[layer]))
-            #style_losses[layer] = style_weights[layer]*(1. / (4*N**2 * M**2)) * tf.reduce_sum(tf.pow(input_grams[layer] - style_gram_placeholders[layer], 2))
-            #style_losses[layer] = style_weights[layer] * tf.reduce_sum(tf.pow(input_grams[layer] - style_gram_placeholders[layer], 2))
             total_style_loss += style_weights[layer] * style_losses[layer]
 	    
         total_loss = alpha*total_content_loss + beta*total_style_loss 
@@ -196,12 +186,8 @@ def main(model,
             
         with tf.Session() as sess:
             tf.global_variables_initializer().run()
-            #restore_model(saver, model, sess)
+            restore_model(saver, model, sess)
             
-            op_list = sess.graph.get_operations()
-            for op in op_list:
-                print("OP: ", op.name)
-
             if display_image_freq < float("inf"):
                 display_image(content_image)
                 display_image(style_image)
@@ -227,7 +213,7 @@ def main(model,
             content_four_trans = sess.run(four_space, feed_dict = {var_input:preprocess(content_image)})
             copy_content_four_to_input_op = four_input.assign(content_four_trans)
             sess.run(copy_content_four_to_input_op)
-            
+
             # Allows content targets to be used if they have already been calculated from a previous iteration
             content_targets = {}
             for layer in content_weights.keys():
@@ -235,8 +221,6 @@ def main(model,
                 content_targets[layer] = sess.run(g.get_tensor_by_name(layer))
             
             if random_initializer:
-                #init_val = sess.run(four_space, feed_dict = {var_input: np.random.randn(*content_image.shape)/10 + 0.5})
-                #reassign_random = four_input.assign(init_val)
                 reassign_random = four_input.assign(np.random.normal(size = (2, 3, content_image.shape[1], (content_image.shape[2] + 2) // 2),
                                                                      scale = 0.01))
                 sess.run(reassign_random)
@@ -258,10 +242,6 @@ def main(model,
             i=0
             _, h, w, d = content_image.shape
 
-
-            print("VGG_INPUT: ", sess.run(vgg_input).shape)
-            print("BGR_INPUT: ", sess.run(bgr_input).shape)
-
             while ((i < cycles) and (time.time()-start_time < training_time)):
                 # Perform update step
                 loss, _, temp_image, tcl, tsl = sess.run([total_loss, update, recorr_img, total_content_loss, total_style_loss], feed_dict=feed_dict)
@@ -275,9 +255,6 @@ def main(model,
                 # Display image 
                 if display_image_freq < float("inf"):
                     if i%display_image_freq==0:
-                        print(temp_image)
-                        print(np.amin(temp_image))
-                        print(np.amax(temp_image))
                         #image_out = un_preprocess(np.clip(sess.run(recorr_img), -1., 1.))
                         display_image(un_preprocess(np.clip(temp_image, -1., 1.)), True, i)
                 i += 1
