@@ -14,7 +14,7 @@
 import inception_style_transfer as istr
 import numpy as np
 
-model = 'VGG_19'
+model = 'Inception_V1'
 
 content_weights = {}
 style_weights = {}
@@ -40,7 +40,7 @@ if model == 'Inception_V1':
     else:
         alpha = 1     #Content Weight
         beta = 2.5    #Style Weight
-    learning_rate = .01               
+    learning_rate = .005               
     
     content_weights["InceptionV1/InceptionV1/Mixed_3b/concat:0"] = 1
     

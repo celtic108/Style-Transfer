@@ -1,10 +1,13 @@
 # Style-Transfer
-Style Transfer using Tensorflow and Inception V3 Network
-Influenced by https://github.com/hwalsuklee/tensorflow-style-transfer
-           *  https://github.com/hwalsuklee/tensorflow-style-transfer
-           *  https://github.com/tensorflow/lucid
-           *  https://distill.pub/2018/differentiable-parameterizations/
-           *  https://github.com/VinceMarron/style_transfer
+## Using Inception V3, Inception V1, and VGG 19 Networks
+
+Style Transfer using Tensorflow 
+Influenced by:
+- https://github.com/hwalsuklee/tensorflow-style-transfer
+- https://github.com/hwalsuklee/tensorflow-style-transfer
+- https://github.com/tensorflow/lucid
+- https://distill.pub/2018/differentiable-parameterizations/
+- https://github.com/VinceMarron/style_transfer
 
 See requirements file for environment requirements
 
